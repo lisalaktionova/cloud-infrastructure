@@ -310,16 +310,6 @@ ssh -L 18000:localhost:8000 \
     prj@cloud-infrastructure.yetti
 ```
 
-| Сервис | Адрес |
-|--------|-------|
-| app | http://127.0.0.1:18000 |
-| PostgreSQL primary | localhost:15432 |
-| PostgreSQL standby | localhost:15433 |
-| postgres-exporter | http://127.0.0.1:19187 |
-| Prometheus | http://127.0.0.1:19090 |
-| Grafana | http://127.0.0.1:13000 (admin/admin) |
-| Alertmanager | http://127.0.0.1:19093 |
-
 ## Структура репозитория
 
 ```
