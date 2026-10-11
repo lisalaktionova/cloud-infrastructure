@@ -1,0 +1,60 @@
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:00:00Z", "level": "INFO", "service": "api", "message": "Order created successfully: order_id=ord-1001 items=[apples, pears] total=450.00 RUB", "trace_id": "a1b2c3d4e5f60001"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:00:03Z", "level": "INFO", "service": "frontend", "message": "User opened catalog page", "trace_id": "a1b2c3d4e5f60001"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:00:05Z", "level": "INFO", "service": "payment", "message": "Payment processed for order_id=ord-1001 amount=450.00 RUB", "trace_id": "a1b2c3d4e5f60001"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:00:12Z", "level": "INFO", "service": "logistics", "message": "Courier assigned for order_id=ord-1001 courier_id=cr-42", "trace_id": "a1b2c3d4e5f60001"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:01:00Z", "level": "INFO", "service": "api", "message": "Order created successfully: order_id=ord-1002 items=[strawberries, blueberries] total=770.00 RUB", "trace_id": "b2c3d4e5f60002"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:01:02Z", "level": "WARN", "service": "db", "message": "Slow query detected: SELECT * FROM orders WHERE user_id=... took 1.2s", "trace_id": "b2c3d4e5f60002"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:01:10Z", "level": "INFO", "service": "payment", "message": "Payment processed for order_id=ord-1002 amount=770.00 RUB", "trace_id": "b2c3d4e5f60002"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:02:00Z", "level": "ERROR", "service": "payment", "message": "Payment provider timeout: order_id=ord-1003", "trace_id": "c3d4e5f60003"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:02:15Z", "level": "WARN", "service": "api", "message": "Retrying payment for order_id=ord-1003 attempt=2", "trace_id": "c3d4e5f60003"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:02:30Z", "level": "INFO", "service": "payment", "message": "Payment processed for order_id=ord-1003 amount=320.00 RUB", "trace_id": "c3d4e5f60003"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:05:00Z", "level": "INFO", "service": "backup", "message": "Starting daily database backup", "trace_id": "d4e5f60004"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:06:45Z", "level": "INFO", "service": "backup", "message": "Backup completed: size=450MB duration=105s", "trace_id": "d4e5f60004"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:10:00Z", "level": "INFO", "service": "api", "message": "Order created successfully: order_id=ord-1004 items=[oranges] total=180.00 RUB", "trace_id": "e5f60005"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:10:05Z", "level": "INFO", "service": "payment", "message": "Payment processed for order_id=ord-1004 amount=180.00 RUB", "trace_id": "e5f60005"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:15:00Z", "level": "WARN", "service": "logistics", "message": "No available couriers in district SPB-VO, queueing order_id=ord-1005", "trace_id": "f600060006"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:15:30Z", "level": "INFO", "service": "logistics", "message": "Courier assigned for order_id=ord-1005 courier_id=cr-17", "trace_id": "f600060006"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:20:00Z", "level": "ERROR", "service": "api", "message": "Database connection pool exhausted: active=20 max=20", "trace_id": "07070707007"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:20:05Z", "level": "ERROR", "service": "api", "message": "Failed to create order: order_id=ord-1006 reason=db unavailable", "trace_id": "07070707007"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:20:30Z", "level": "WARN", "service": "db", "message": "Connection pool near limit: 18/20 connections in use", "trace_id": "07070707007"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:25:00Z", "level": "INFO", "service": "api", "message": "Order created successfully: order_id=ord-1007 items=[apples, bananas, grapes] total=620.00 RUB", "trace_id": "08080808008"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:25:05Z", "level": "INFO", "service": "payment", "message": "Payment processed for order_id=ord-1007 amount=620.00 RUB", "trace_id": "08080808008"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:25:10Z", "level": "INFO", "service": "logistics", "message": "Courier assigned for order_id=ord-1007 courier_id=cr-33", "trace_id": "08080808008"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:30:00Z", "level": "INFO", "service": "frontend", "message": "User logged in: user_id=u-501", "trace_id": "09090909009"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:30:02Z", "level": "INFO", "service": "api", "message": "Catalog fetched: 42 items returned", "trace_id": "09090909009"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:35:00Z", "level": "ERROR", "service": "frontend", "message": "Failed to load catalog: API returned 500", "trace_id": "0a0a0a0a00a"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:35:05Z", "level": "ERROR", "service": "api", "message": "Unhandled exception in /api/catalog: NullPointerException at catalog.py:42", "trace_id": "0a0a0a0a00a"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:40:00Z", "level": "INFO", "service": "api", "message": "Health check OK: uptime=3600s connections=5", "trace_id": "0b0b0b0b00b"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:45:00Z", "level": "WARN", "service": "db", "message": "Replication lag high: standby lagging by 250MB", "trace_id": "0c0c0c0c00c"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:50:00Z", "level": "INFO", "service": "api", "message": "Order created successfully: order_id=ord-1008 items=[peaches] total=280.00 RUB", "trace_id": "0d0d0d0d00d"}
+{"index": {"_index": "shop-logs-write"}}
+{"timestamp": "2026-10-11T09:50:05Z", "level": "ERROR", "service": "payment", "message": "Payment declined: order_id=ord-1008 reason=insufficient funds", "trace_id": "0d0d0d0d00d"}

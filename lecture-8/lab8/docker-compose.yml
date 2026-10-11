@@ -1,0 +1,230 @@
+networks:
+  monitoring-net:
+    external: true
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+  loki-data:
+  primary-data:
+  standby-data:
+  es-data:
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  postgres-primary:
+    image: postgres:16
+    container_name: postgres-primary
+    hostname: postgres-primary
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: shopdb
+    volumes:
+      - ./postgres/primary/init-replication.sh:/docker-entrypoint-initdb.d/01-init-replication.sh:ro
+      - primary-data:/var/lib/postgresql/data
+    command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on", "-c", "listen_addresses=*"]
+    ports:
+      - "15432:5432"
+    networks:
+      - monitoring-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d shopdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  postgres-standby:
+    image: postgres:16
+    container_name: postgres-standby
+    hostname: postgres-standby
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: shopdb
+    volumes:
+      - ./postgres/standby/entrypoint.sh:/standby-entrypoint.sh:ro
+      - standby-data:/var/lib/postgresql/data
+    entrypoint: ["/bin/bash", "/standby-entrypoint.sh"]
+    ports:
+      - "15433:5432"
+    networks:
+      - monitoring-net
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://appuser:apppassword@postgres-primary:5432/shopdb?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - monitoring-net
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app:
+    build: ./app
+    container_name: app
+    ports:
+      - "8000:8000"
+    environment:
+      - PRIMARY_DSN=postgresql://appuser:apppassword@postgres-primary:5432/shopdb
+      - STANDBY_DSN=postgresql://appuser:apppassword@postgres-standby:5432/shopdb
+    networks:
+      - monitoring-net
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      postgres-standby:
+        condition: service_started
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - monitoring-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  elasticsearch-exporter:
+    image: prometheuscommunity/elasticsearch-exporter:v1.7.0
+    container_name: elasticsearch-exporter
+    command:
+      - "--es.uri=http://elasticsearch:9200"
+      - "--es.all"
+    ports:
+      - "9114:9114"
+    networks:
+      - monitoring-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - monitoring-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: ["filebeat", "-e", "-strict.perms=false"]
+    networks:
+      - monitoring-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped

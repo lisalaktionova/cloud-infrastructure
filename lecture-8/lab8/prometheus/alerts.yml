@@ -1,0 +1,31 @@
+groups:
+  - name: elasticsearch
+    rules:
+      - alert: ElasticsearchClusterRed
+        expr: elasticsearch_cluster_health_status{cluster="docker-cluster", color="red"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch кластер в статусе RED"
+          description: "Часть primary-шардов недоступна. Данные могут быть недоступны для поиска."
+
+      - alert: ElasticsearchClusterYellow
+        expr: elasticsearch_cluster_health_status{cluster="docker-cluster", color="yellow"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch кластер в статусе YELLOW"
+          description: "Есть нераспределённые шарды (реплики). Данные доступны, но нет резерва."
+
+      - alert: ElasticsearchJVMHeapHigh
+        expr: |
+          elasticsearch_jvm_memory_used_bytes{cluster="docker-cluster", area="heap"}
+          / elasticsearch_jvm_memory_max_bytes{cluster="docker-cluster", area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap используется более 85%"
+          description: "Elasticsearch может начать тормозить или падать. Проверьте нагрузку и размер индексов."
