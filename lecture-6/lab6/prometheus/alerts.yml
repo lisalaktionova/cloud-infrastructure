@@ -1,0 +1,29 @@
+groups:
+  - name: postgres
+    rules:
+      - alert: PostgresDown
+        expr: pg_up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL недоступен"
+          description: "postgres-exporter не может подключиться к БД больше 1 минуты"
+
+      - alert: StandbyDisconnected
+        expr: absent(pg_stat_replication_pg_wal_lsn_diff{state="streaming"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Нет подключённых standby"
+          description: "Ни один standby не стримит WAL с primary больше 2 минут"
+
+      - alert: ReplicationLagHigh
+        expr: pg_stat_replication_pg_wal_lsn_diff{state="streaming"} > 104857600
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокий replication lag"
+          description: "Lag превышает 100 МБ больше 2 минут (текущее: {{ $value | humanize1024 }}B)"

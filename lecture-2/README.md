@@ -5,10 +5,10 @@
 ## Что это
 
 Продолжение Лабы 1. Для сервиса заказов поднят полный мониторинг:
-- **Метрики** - Prometheus + Grafana (дашборд по методологии RED).
-- **Логи** - Loki + Promtail + Grafana.
-- **Трейсы** - OpenTelemetry + Jaeger.
-- **Алерты** - Prometheus + Alertmanager (три правила).
+- Метрики - Prometheus + Grafana (дашборд по методологии RED).
+- Логи - Loki + Promtail + Grafana.
+- Трейсы - OpenTelemetry + Jaeger.
+- Алерты - Prometheus + Alertmanager (три правила).
 
 Всё развёрнуто через Docker Compose на домашнем сервере, сервисы общаются через общую Docker-сеть `monitoring-net`.
 
