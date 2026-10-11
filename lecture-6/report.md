@@ -271,15 +271,15 @@ pg_stat_replication_pg_wal_lsn_diff{state="streaming"} > 104857600
 
 ## Скриншоты
 
-- [`screenshots/WAL.png`](screenshots/WAL.png) - логи standby: `started streaming WAL from primary`
-- [`screenshots/test-standby.png`](screenshots/test-standby.png) - запись в primary, чтение со standby, ошибка записи в standby (read-only)
-- [`screenshots/shop-app.png`](screenshots/shop-app.png) - страница app со списком записей
-- [`screenshots/replay_lag.png`](screenshots/replay_lag.png) - replication lag из `pg_stat_replication`
-- [`screenshots/promotion.png`](screenshots/promotion.png) - промоушен standby до primary
-- [`screenshots/grafana.png`](screenshots/grafana.png) - дашборд Grafana с метриками репликации
-- [`screenshots/error.png`](screenshots/error.png) - ошибка записи, когда primary упал
-- [`screenshots/alerts.png`](screenshots/alerts.png) - алерт в Firing
-- [`screenshots/after-failover.png`](screenshots/after-failover.png) - app после failover: запись снова работает
+![`screenshots/WAL.png`](screenshots/WAL.png) - логи standby: `started streaming WAL from primary`
+![`screenshots/test-standby.png`](screenshots/test-standby.png) - запись в primary, чтение со standby, ошибка записи в standby (read-only)
+![`screenshots/shop-app.png`](screenshots/shop-app.png) - страница app со списком записей
+![`screenshots/replay_lag.png`](screenshots/replay_lag.png) - replication lag из `pg_stat_replication`
+![`screenshots/promotion.png`](screenshots/promotion.png) - промоушен standby до primary
+![`screenshots/grafana.png`](screenshots/grafana.png) - дашборд Grafana с метриками репликации
+![`screenshots/error.png`](screenshots/error.png) - ошибка записи, когда primary упал
+![`screenshots/alerts.png`](screenshots/alerts.png) - алерт в Firing
+![`screenshots/after-failover.png`](screenshots/after-failover.png) - app после failover: запись снова работает
 
 ## Как запустить
 
