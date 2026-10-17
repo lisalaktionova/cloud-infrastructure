@@ -1,0 +1,29 @@
+groups:
+  - name: gitlab
+    rules:
+      - alert: GitLabDown
+        expr: up{job=~"gitlab-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GitLab недоступен"
+          description: "Prometheus не может собрать метрики с GitLab больше 1 минуты."
+
+      - alert: GitLabSidekiqQueueHigh
+        expr: sum(sidekiq_queue_size) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая очередь задач Sidekiq"
+          description: "Очередь Sidekiq превышает 100 задач в течение 5 минут."
+
+      - alert: GitLabPumaQueueHigh
+        expr: sum(puma_queued_connections) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая очередь запросов в Puma"
+          description: "Количество запросов в очереди Puma превышает 20 в течение 5 минут."

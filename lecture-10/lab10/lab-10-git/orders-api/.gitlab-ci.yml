@@ -1,0 +1,58 @@
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  DOCKER_DRIVER: "overlay2"
+
+lint:python:
+  stage: lint
+  tags:
+    - static
+  image: python:3.12-slim
+  script:
+    - echo "Checking Python syntax..."
+    - python -m compileall main.py
+    - echo "Lint OK"
+
+lint:dockerfile:
+  stage: lint
+  tags:
+    - static
+  image: hadolint/hadolint:latest-alpine
+  script:
+    - echo "Checking Dockerfile..."
+    - hadolint Dockerfile || true
+
+test:import:
+  stage: test
+  tags:
+    - static
+  image: python:3.12-slim
+  script:
+    - pip install --quiet setuptools==75.1.0
+    - pip install --quiet fastapi==0.115.0 uvicorn[standard]==0.32.0
+    - pip install --quiet prometheus-client==0.21.0 prometheus-fastapi-instrumentator==7.0.0
+    - pip install --quiet structlog==24.4.0
+    - pip install --quiet opentelemetry-api==1.27.0 opentelemetry-sdk==1.27.0 opentelemetry-instrumentation-fastapi==0.48b0 opentelemetry-exporter-otlp-proto-http==1.27.0
+    - pip install --quiet httpx==0.27.2
+    - python -c "import main; print('Application imports OK')"
+
+build-and-push:
+  stage: build
+  tags:
+    - dynamic
+  image: docker:27
+  variables:
+    REGISTRY_INTERNAL: "127.0.0.1:5000"
+    IMAGE_TAG: "127.0.0.1:5000/root/orders-api:${CI_COMMIT_SHORT_SHA}"
+  before_script:
+    - echo "Logging into registry..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$REGISTRY_INTERNAL"
+  script:
+    - echo "Building image ${IMAGE_TAG}..."
+    - docker build -t "${IMAGE_TAG}" .
+    - echo "Pushing to registry..."
+    - docker push "${IMAGE_TAG}"
+    - echo "Done"

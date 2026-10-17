@@ -1,0 +1,18 @@
+concurrent = 4
+check_interval = 3
+
+[[runners]]
+  name = "static-runner"
+  url = "http://gitlab/"
+  clone_url = "http://gitlab"
+  token = "glrt-t1_"
+  executor = "docker"
+  [runners.docker]
+    image = "docker:27"
+    privileged = true
+    volumes = ["/cache", "/var/run/docker.sock:/var/run/docker.sock"]
+    network_mode = "monitoring-net"
+    pull_policy = "if-not-present"
+  [runners.cache]
+    Type = "local"
+    Path = "/cache"

@@ -1,0 +1,18 @@
+concurrent = 10
+check_interval = 3
+
+[[runners]]
+  name = "ephemeral-runner"
+  url = "http://gitlab/"
+  clone_url = "http://gitlab"
+  token = "glrt-t1__"
+  executor = "docker"
+  [runners.docker]
+    image = "docker:27"
+    privileged = true
+    volumes = ["/var/run/docker.sock:/var/run/docker.sock"]
+    network_mode = "monitoring-net"
+    pull_policy = "always"
+    disable_cache = true
+  [runners.cache]
+    Type = "local"

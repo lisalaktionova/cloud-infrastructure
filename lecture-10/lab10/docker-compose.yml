@@ -1,0 +1,215 @@
+networks:
+  monitoring-net:
+    external: true
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  keycloak-data:
+  grafana-data:
+  prometheus-data:
+  alertmanager-data:
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    hostname: keycloak
+    command:
+      - start-dev
+      - --http-port=8080
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://keycloak.local:18080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    ports:
+      - "18080:8080"
+    extra_hosts:
+      - "sso.local:host-gateway"
+      - "keycloak.local:host-gateway"
+      - "grafana.local:host-gateway"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  gitlab:
+    image: gitlab/gitlab-ce:17.6.0-ce.0
+    container_name: gitlab
+    hostname: gitlab
+    shm_size: '256m'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://sso.local'
+        gitlab_rails['trusted_proxies'] = ['172.16.0.0/12']
+        gitlab_rails['initial_root_password'] = 'StrongRootPass123'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+
+        prometheus_monitoring['enable'] = true
+        prometheus_monitoring['listen_address'] = '0.0.0.0'
+        puma['exporter_enabled'] = true
+        puma['exporter_address'] = '0.0.0.0'
+        puma['exporter_port'] = 8083
+        sidekiq['metrics_enabled'] = true
+        sidekiq['listen_address'] = "0.0.0.0"
+        sidekiq['listen_port'] = 8082
+        gitlab_rails['monitoring_whitelist'] = ['127.0.0.1', '::1', '172.16.0.0/12']
+        node_exporter['enable'] = false
+        postgres_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        gitlab_exporter['enable'] = true
+        gitlab_exporter['listen_address'] = '0.0.0.0'
+        gitlab_exporter['listen_port'] = 9168
+
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+
+        registry_external_url 'http://gitlab:5000'
+        registry['enable'] = true
+        registry['registry_http_addr'] = '0.0.0.0:5000'
+        registry_nginx['enable'] = false
+
+        gitlab_rails['omniauth_enabled'] = true
+        gitlab_rails['omniauth_allow_single_sign_on'] = ['openid_connect']
+        gitlab_rails['omniauth_auto_link_user'] = ['openid_connect']
+        gitlab_rails['omniauth_block_auto_created_users'] = false
+        gitlab_rails['omniauth_providers'] = [
+          {
+            name: 'openid_connect',
+            label: 'Keycloak',
+            args: {
+              name: 'openid_connect',
+              scope: ['openid', 'profile', 'email'],
+              response_type: 'code',
+              issuer: 'http://keycloak.local:18080/realms/shop',
+              discovery: false,
+              client_auth_method: 'query',
+              uid_field: 'preferred_username',
+              send_scope_to_token_endpoint: false,
+              client_options: {
+                identifier: 'gitlab',
+                secret: 'a0oz7QKfB4rAz1NXmao0Ht07IkvsgTpO',
+                redirect_uri: 'https://sso.local/users/auth/openid_connect/callback',
+                authorization_endpoint: 'http://keycloak.local:18080/realms/shop/protocol/openid-connect/auth',
+                token_endpoint: 'http://keycloak:8080/realms/shop/protocol/openid-connect/token',
+                userinfo_endpoint: 'http://keycloak:8080/realms/shop/protocol/openid-connect/userinfo',
+                jwks_uri: 'http://keycloak:8080/realms/shop/protocol/openid-connect/certs'
+              }
+            }
+          }
+        ]
+    ports:
+      - "2222:22"
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    extra_hosts:
+      - "sso.local:host-gateway"
+      - "keycloak.local:host-gateway"
+      - "grafana.local:host-gateway"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana-lab10
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SERVER_ROOT_URL: "http://grafana.local:3001"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "Keycloak"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "Dic8v7mZII6qVautdorunNTxeAGi94Ac"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "http://keycloak.local:18080/realms/shop/protocol/openid-connect/auth"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://keycloak:8080/realms/shop/protocol/openid-connect/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://keycloak:8080/realms/shop/protocol/openid-connect/userinfo"
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(roles[*], 'admin') && 'Admin' || 'Viewer'"
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    extra_hosts:
+      - "sso.local:host-gateway"
+      - "keycloak.local:host-gateway"
+      - "grafana.local:host-gateway"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx-edge
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5000:5000"
+    volumes:
+      - ./nginx/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
+      - ./nginx/proxy_params_gitlab.conf:/etc/nginx/proxy_params_gitlab.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  gitlab-runner-static:
+    image: gitlab/gitlab-runner:v17.6.0
+    container_name: gitlab-runner-static
+    restart: unless-stopped
+    volumes:
+      - ./gitlab-runner-static/config.toml:/etc/gitlab-runner/config.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - monitoring-net
+    extra_hosts:
+      - "sso.local:host-gateway"
+      - "gitlab.local:host-gateway"
+
+  gitlab-runner-dynamic:
+    image: gitlab/gitlab-runner:v17.6.0
+    container_name: gitlab-runner-dynamic
+    restart: unless-stopped
+    volumes:
+      - ./gitlab-runner-dynamic/config.toml:/etc/gitlab-runner/config.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - monitoring-net
+    extra_hosts:
+      - "sso.local:host-gateway"
+      - "gitlab.local:host-gateway"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
