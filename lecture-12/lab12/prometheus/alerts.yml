@@ -1,0 +1,32 @@
+groups:
+  - name: n8n_workflows
+    rules:
+      - alert: n8nWorkflowFailed
+        expr: increase(n8n_workflow_execution_duration_seconds_count{status!="success"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Сбой в работе AI-ассистента поддержки"
+          description: "За последние 5 минут произошла ошибка выполнения workflow. Клиент не получил ответ."
+
+      - alert: n8nHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(n8n_workflow_execution_duration_seconds_bucket[5m])) by (le)
+          ) > 30
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая задержка ответа AI-ассистента"
+          description: "95-й перцентиль обработки тикета превышает 30 секунд. Клиенты слишком долго ждут ответа."
+
+      - alert: n8nNoActiveWorkflows
+        expr: n8n_active_workflow_count == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "В n8n нет активных workflow"
+          description: "Ни один workflow не активирован. AI-ассистент не работает."

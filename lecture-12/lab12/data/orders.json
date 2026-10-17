@@ -1,0 +1,16 @@
+{
+  "12345": {
+    "order_id": "12345",
+    "customer": "Иван Петров",
+    "items": ["Яблоки Антоновка 1кг", "Груша Конференция 0.5кг"],
+    "status": "in_transit",
+    "expected_delivery": "2026-10-18"
+  },
+  "67890": {
+    "order_id": "67890",
+    "customer": "Мария Сидорова",
+    "items": ["Клубника 1кг"],
+    "status": "delivered",
+    "expected_delivery": "2026-10-16"
+  }
+}
